@@ -81,16 +81,24 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Deploy container
-        shell: bash
+      - name: Stop old container
+        shell: powershell
+        continue-on-error: true
         run: |
-          docker stop web-app || true
-          docker rm web-app || true
+          docker stop web-app
+          docker rm web-app
+
+      - name: Deploy container
+        shell: powershell
+        run: |
           docker pull ghcr.io/${{ github.repository }}:latest
+          if ($LASTEXITCODE -ne 0) { exit 1 }
           docker run -d --name web-app -p ${{ secrets.APP_PORT }}:80 ghcr.io/${{ github.repository }}:latest
+          if ($LASTEXITCODE -ne 0) { exit 1 }
 
       - name: Health check
-        shell: bash
+        shell: powershell
         run: |
-          sleep 3
-          curl -f http://localhost:${{ secrets.APP_PORT }} || exit 1
+          Start-Sleep -Seconds 3
+          curl.exe -f http://localhost:${{ secrets.APP_PORT }}
+          if ($LASTEXITCODE -ne 0) { exit 1 }
